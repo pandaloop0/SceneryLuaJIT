@@ -1874,7 +1874,7 @@ static void parse_body(LexState *ls, ExpDesc *e, int needself, BCLine line)
   fs.bclim = pfs->bclim - pfs->pc;
   bcemit_AD(&fs, BC_FUNCF, 0, 0);  /* Placeholder. */
   parse_chunk(ls);
-  if (ls->tok != TK_end) lex_match(ls, TK_end, TK_function, line);
+  if (ls->tok != TK_end) lex_match(ls, TK_end, TK_fn, line);
   pt = fs_finish(ls, (ls->lastline = ls->linenumber));
   pfs->bcbase = ls->bcstack + oldbase;  /* May have been reallocated. */
   pfs->bclim = (BCPos)(ls->sizebcstack - oldbase);
@@ -2026,7 +2026,7 @@ static void expr_simple(LexState *ls, ExpDesc *v)
   case '{':  /* Table constructor. */
     expr_table(ls, v);
     return;
-  case TK_function:
+  case TK_fn:
     lj_lex_next(ls);
     parse_body(ls, v, 0, ls->linenumber);
     return;
@@ -2260,7 +2260,7 @@ static void parse_call_assign(LexState *ls)
 /* Parse 'local' statement. */
 static void parse_local(LexState *ls)
 {
-  if (lex_opt(ls, TK_function)) {  /* Local function declaration. */
+  if (lex_opt(ls, TK_fn)) {  /* Local function declaration. */
     ExpDesc v, b;
     FuncState *fs = ls->fs;
     var_new(ls, 0, lex_str(ls));
@@ -2668,7 +2668,7 @@ static int parse_stmt(LexState *ls)
   case TK_repeat:
     parse_repeat(ls, line);
     break;
-  case TK_function:
+  case TK_fn:
     parse_func(ls, line);
     break;
   case TK_local:
