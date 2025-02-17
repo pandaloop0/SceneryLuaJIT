@@ -405,7 +405,7 @@ static LexToken lex_scan(LexState *ls, TValue *tv) {
     case '!':
       lex_next(ls);
       if (ls->c != '=')
-        return '!';
+        return TK_not;
       else {
         lex_next(ls);
         return TK_ne;

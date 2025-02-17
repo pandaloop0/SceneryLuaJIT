@@ -658,28 +658,6 @@ static void bcemit_store(FuncState *fs, ExpDesc *var, ExpDesc *e) {
   expr_free(fs, e);
 }
 
-/* Emit method lookup expression. */
-static void bcemit_method(FuncState *fs, ExpDesc *e, ExpDesc *key) {
-  BCReg idx, func, fr2, obj = expr_toanyreg(fs, e);
-  expr_free(fs, e);
-  func = fs->freereg;
-  fr2 = fs->ls->fr2;
-  bcemit_AD(fs, BC_MOV, func + 1 + fr2, obj); /* Copy object to 1st argument. */
-  lj_assertFS(expr_isstrk(key), "bad usage");
-  idx = const_str(fs, key);
-  if (idx <= BCMAX_C) {
-    bcreg_reserve(fs, 2 + fr2);
-    bcemit_ABC(fs, BC_TGETS, func, obj, idx);
-  } else {
-    bcreg_reserve(fs, 3 + fr2);
-    bcemit_AD(fs, BC_KSTR, func + 2 + fr2, idx);
-    bcemit_ABC(fs, BC_TGETV, func, obj, func + 2 + fr2);
-    fs->freereg--;
-  }
-  e->u.s.info = func;
-  e->k = VNONRELOC;
-}
-
 /* -- Bytecode emitter for branches --------------------------------------- */
 
 /* Emit unconditional branch. */
@@ -1961,18 +1939,43 @@ static void expr_primary(LexState *ls, ExpDesc *v) {
   }
   for (;;) { /* Parse multiple expression suffixes. */
     if (ls->tok == '.') {
-      expr_field(ls, v);
+      FuncState *fs = ls->fs;
+      ExpDesc key;
+      expr_toanyreg(fs, v);
+      lj_lex_next(ls);
+      expr_str(ls, &key);
+      if(ls->tok == '(') {
+        //Method call
+        ExpDesc* e = v;
+        BCReg idx, func, fr2, obj = expr_toanyreg(fs, e);
+        expr_free(fs, e);
+        func = fs->freereg;
+        fr2 = fs->ls->fr2;
+        bcemit_AD(fs, BC_MOV, func + 1 + fr2, obj); /* Copy object to 1st argument. */
+        lj_assertFS(expr_isstrk(key), "bad usage");
+        idx = const_str(fs, &key);
+        if (idx <= BCMAX_C) {
+          bcreg_reserve(fs, 2 + fr2);
+          bcemit_ABC(fs, BC_TGETS, func, obj, idx);
+        } else {
+          bcreg_reserve(fs, 3 + fr2);
+          bcemit_AD(fs, BC_KSTR, func + 2 + fr2, idx);
+          bcemit_ABC(fs, BC_TGETV, func, obj, func + 2 + fr2);
+          fs->freereg--;
+        }
+        e->u.s.info = func;
+        e->k = VNONRELOC;
+        parse_args(ls, v);
+      } else {
+        expr_index(fs, v, &key);
+      }
     } else if (ls->tok == '[') {
       ExpDesc key;
       expr_toanyreg(fs, v);
       expr_bracket(ls, &key);
       expr_index(fs, v, &key);
     } else if (ls->tok == ':') {
-      ExpDesc key;
-      lj_lex_next(ls);
-      expr_str(ls, &key);
-      bcemit_method(fs, v, &key);
-      parse_args(ls, v);
+      expr_field(ls, v);
     } else if (ls->tok == '(' || ls->tok == TK_string || ls->tok == '{') {
       expr_tonextreg(fs, v);
       if (ls->fr2)
