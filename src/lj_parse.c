@@ -631,8 +631,10 @@ static void bcemit_store(FuncState *fs, ExpDesc *var, ExpDesc *e) {
     else
       ins = BCINS_AD(BC_USETV, var->u.s.info, expr_toanyreg(fs, e));
   } else if (var->k == VGLOBAL) {
-    BCReg ra = expr_toanyreg(fs, e);
-    ins = BCINS_AD(BC_GSET, ra, const_str(fs, var));
+    // NOTE(pl): Implicit definition of globals is not allowed.
+    lj_lex_error(fs->ls, fs->ls->tok, LJ_ERR_XIMPGLBL);
+    // BCReg ra = expr_toanyreg(fs, e);
+    // ins = BCINS_AD(BC_GSET, ra, const_str(fs, var));
   } else {
     BCReg ra, rc;
     lj_assertFS(var->k == VINDEXED, "bad expr type %d", var->k);
