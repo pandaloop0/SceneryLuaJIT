@@ -514,7 +514,7 @@ GCstr * LJ_FASTCALL lj_strfmt_obj(lua_State *L, cTValue *o)
   } else if (tvisnumber(o)) {
     return lj_strfmt_number(L, o);
   } else if (tvisnil(o)) {
-    return lj_str_newlit(L, "nil");
+    return lj_str_newlit(L, "NONE");
   } else if (tvisfalse(o)) {
     return lj_str_newlit(L, "false");
   } else if (tvistrue(o)) {

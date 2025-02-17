@@ -54,7 +54,7 @@ LJLIB_ASM(assert)		LJLIB_REC(.)
 }
 
 /* ORDER LJ_T */
-LJLIB_PUSH("nil")
+LJLIB_PUSH("NONE")
 LJLIB_PUSH("boolean")
 LJLIB_PUSH(top-1)  /* boolean */
 LJLIB_PUSH("userdata")
