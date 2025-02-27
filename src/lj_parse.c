@@ -28,8 +28,6 @@
 #include "lj_vm.h"
 #include "lj_vmevent.h"
 
-#include <stdio.h>
-
 /* -- Parser structures and definitions ----------------------------------- */
 
 /* Expression kinds. */
@@ -2304,7 +2302,6 @@ static void parse_func(LexState *ls, BCLine line) {
 static int parse_isend(LexToken tok) {
   switch (tok) {
   case TK_else:
-  case TK_elseif:
   case TK_end:
   case TK_until:
   case TK_eof:
@@ -2607,23 +2604,25 @@ static void parse_if(LexState *ls, BCLine line) {
   BCPos escapelist = NO_JMP;
   flist = parse_then(ls);
   lex_match(ls, '}', TK_if, line); // Skip }
-  while (ls->tok == TK_elseif) { /* Parse multiple 'elseif' blocks. */
-    jmp_append(fs, &escapelist, bcemit_jmp(fs));
-    jmp_tohere(fs, flist);
-    flist = parse_then(ls);
-    lex_match(ls, '}', TK_elseif, line); // Skip }
-  }
-  if (ls->tok == TK_else) { /* Parse optional 'else' block. */
-    jmp_append(fs, &escapelist, bcemit_jmp(fs));
-    jmp_tohere(fs, flist);
+  while (ls->tok == TK_else) { /* Parse multiple 'elseif' blocks and one optional else block. */
     lj_lex_next(ls); /* Skip 'else'. */
-    lex_check(ls, '{'); // skip {
-    parse_block(ls);
-  } else {
-    jmp_append(fs, &escapelist, flist);
+    if(ls->tok == TK_if) {
+      jmp_append(fs, &escapelist, bcemit_jmp(fs));
+      jmp_tohere(fs, flist);
+      flist = parse_then(ls);
+      lex_match(ls, '}', TK_else, line); // Skip }
+    } else {
+      jmp_append(fs, &escapelist, bcemit_jmp(fs));
+      jmp_tohere(fs, flist);
+      lex_check(ls, '{'); // skip {
+      parse_block(ls);
+      lex_match(ls, '}', TK_if, line);
+      goto haselse;
+    }
   }
+  jmp_append(fs, &escapelist, flist);
+haselse:
   jmp_tohere(fs, escapelist);
-  lex_match(ls, '}', TK_if, line);
 }
 
 /* -- Parse statements ---------------------------------------------------- */
