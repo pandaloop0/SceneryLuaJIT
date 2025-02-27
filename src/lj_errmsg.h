@@ -144,6 +144,7 @@ ERRDEF(XLUNDEF,	"undefined label " LUA_QS)
 ERRDEF(XLDUP,	"duplicate label " LUA_QS)
 ERRDEF(XGSCOPE,	"<goto %s> jumps into the scope of local " LUA_QS)
 ERRDEF(XIMPGLBL,	"Implicit definition of global variable not allowed")
+ERRDEF(XMISSING,	"Missing token " LUA_QS)
 
 /* Bytecode reader errors. */
 ERRDEF(BCFMT,	"cannot load incompatible bytecode")

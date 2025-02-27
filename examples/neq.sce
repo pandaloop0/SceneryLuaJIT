@@ -1,3 +1,3 @@
-if 10 != 9 then
+if 10 != 9 {
 	print("MORELLINI")
-end
+}

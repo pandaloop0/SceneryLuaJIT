@@ -28,6 +28,8 @@
 #include "lj_vm.h"
 #include "lj_vmevent.h"
 
+#include <stdio.h>
+
 /* -- Parser structures and definitions ----------------------------------- */
 
 /* Expression kinds. */
@@ -1844,9 +1846,11 @@ static void parse_body(LexState *ls, ExpDesc *e, int needself, BCLine line) {
   fs.bcbase = pfs->bcbase + pfs->pc;
   fs.bclim = pfs->bclim - pfs->pc;
   bcemit_AD(&fs, BC_FUNCF, 0, 0); /* Placeholder. */
+  lex_check(ls, '{');
   parse_chunk(ls);
-  if (ls->tok != TK_end)
-    lex_match(ls, TK_end, TK_fn, line);
+  if (ls->tok != '}') {
+    lex_match(ls, '}', TK_fn, line);
+  }
   pt = fs_finish(ls, (ls->lastline = ls->linenumber));
   pfs->bcbase = ls->bcstack + oldbase; /* May have been reallocated. */
   pfs->bclim = (BCPos)(ls->sizebcstack - oldbase);
@@ -2304,6 +2308,7 @@ static int parse_isend(LexToken tok) {
   case TK_end:
   case TK_until:
   case TK_eof:
+  case '}':
     return 1;
   default:
     return 0;
@@ -2590,7 +2595,7 @@ static BCPos parse_then(LexState *ls) {
   BCPos condexit;
   lj_lex_next(ls); /* Skip 'if' or 'elseif'. */
   condexit = expr_cond(ls);
-  lex_check(ls, TK_then);
+  lex_check(ls, '{');
   parse_block(ls);
   return condexit;
 }
@@ -2601,21 +2606,24 @@ static void parse_if(LexState *ls, BCLine line) {
   BCPos flist;
   BCPos escapelist = NO_JMP;
   flist = parse_then(ls);
+  lex_match(ls, '}', TK_if, line); // Skip }
   while (ls->tok == TK_elseif) { /* Parse multiple 'elseif' blocks. */
     jmp_append(fs, &escapelist, bcemit_jmp(fs));
     jmp_tohere(fs, flist);
     flist = parse_then(ls);
+    lex_match(ls, '}', TK_elseif, line); // Skip }
   }
   if (ls->tok == TK_else) { /* Parse optional 'else' block. */
     jmp_append(fs, &escapelist, bcemit_jmp(fs));
     jmp_tohere(fs, flist);
     lj_lex_next(ls); /* Skip 'else'. */
+    lex_check(ls, '{'); // skip {
     parse_block(ls);
   } else {
     jmp_append(fs, &escapelist, flist);
   }
   jmp_tohere(fs, escapelist);
-  lex_match(ls, TK_end, TK_if, line);
+  lex_match(ls, '}', TK_if, line);
 }
 
 /* -- Parse statements ---------------------------------------------------- */

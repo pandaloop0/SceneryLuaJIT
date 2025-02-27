@@ -1,6 +1,10 @@
-fn morello()
+fn morello() {
+	let x = {
+		a = 10
+	}
 	print("Forello")
-end
+	print(x.a)
+}
 
 morello()
 
