@@ -2261,35 +2261,19 @@ static void parse_call_assign(LexState *ls) {
 
 /* Parse 'local' statement. */
 static void parse_local(LexState *ls) {
-  if (lex_opt(ls, TK_fn)) { /* Local function declaration. */
-    ExpDesc v, b;
-    FuncState *fs = ls->fs;
-    var_new(ls, 0, lex_str(ls));
-    expr_init(&v, VLOCAL, fs->freereg);
-    v.u.s.aux = fs->varmap[fs->freereg];
-    bcreg_reserve(fs, 1);
-    var_add(ls, 1);
-    parse_body(ls, &b, 0, ls->linenumber);
-    /* bcemit_store(fs, &v, &b) without setting VSTACK_VAR_RW. */
-    expr_free(fs, &b);
-    expr_toreg(fs, &b, v.u.s.info);
-    /* The upvalue is in scope, but the local is only valid after the store. */
-    var_get(ls, fs, fs->nactvar - 1).startpc = fs->pc;
-  } else { /* Local variable declaration. */
-    ExpDesc e;
-    BCReg nexps, nvars = 0;
-    do { /* Collect LHS. */
-      var_new(ls, nvars++, lex_str(ls));
-    } while (lex_opt(ls, ','));
-    if (lex_opt(ls, '=')) { /* Optional RHS. */
-      nexps = expr_list(ls, &e);
-    } else { /* Or implicitly set to nil. */
-      e.k = VVOID;
-      nexps = 0;
-    }
-    assign_adjust(ls, nvars, nexps, &e);
-    var_add(ls, nvars);
+  ExpDesc e;
+  BCReg nexps, nvars = 0;
+  do { /* Collect LHS. */
+    var_new(ls, nvars++, lex_str(ls));
+  } while (lex_opt(ls, ','));
+  if (lex_opt(ls, '=')) { /* Optional RHS. */
+    nexps = expr_list(ls, &e);
+  } else { /* Or implicitly set to nil. */
+    e.k = VVOID;
+    nexps = 0;
   }
+  assign_adjust(ls, nvars, nexps, &e);
+  var_add(ls, nvars);
 }
 
 /* Parse 'function' statement. */
