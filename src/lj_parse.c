@@ -813,7 +813,7 @@ static void bcemit_comp(FuncState *fs, BinOpr opr, ExpDesc *e1, ExpDesc *e2) {
     if (expr_isk(e1)) {
       e1 = e2;
       e2 = eret;
-    }                           /* Need constant in 2nd arg. */
+    } /* Need constant in 2nd arg. */
     ra = expr_toanyreg(fs, e1); /* First arg must be in a reg. */
     expr_toval(fs, e2);
     switch (e2->k) {
@@ -1697,20 +1697,23 @@ static void expr_table(LexState *ls, ExpDesc *e) {
   while (ls->tok != '}') {
     ExpDesc key, val;
     vcall = 0;
-    if (ls->tok == '[') {
-      expr_bracket(ls, &key); /* Already calls expr_toval. */
-      if (!expr_isk(&key))
-        expr_index(fs, e, &key);
-      if (expr_isnumk(&key) && expr_numiszero(&key))
-        needarr = 1;
-      else
+    if (ls->tok == '.') {
+      lj_lex_next(ls);// skip .
+      if (ls->tok == '[') {
+        expr_bracket(ls, &key); /* Already calls expr_toval. */
+        if (!expr_isk(&key))
+          expr_index(fs, e, &key);
+        if (expr_isnumk(&key) && expr_numiszero(&key))
+          needarr = 1;
+        else
+          nhash++;
+        lex_check(ls, '=');
+      } else if ((ls->tok == TK_name || (!LJ_52 && ls->tok == TK_goto)) &&
+                 lj_lex_lookahead(ls) == '=') {
+        expr_str(ls, &key);
+        lex_check(ls, '=');
         nhash++;
-      lex_check(ls, '=');
-    } else if ((ls->tok == TK_name || (!LJ_52 && ls->tok == TK_goto)) &&
-               lj_lex_lookahead(ls) == '=') {
-      expr_str(ls, &key);
-      lex_check(ls, '=');
-      nhash++;
+      }
     } else {
       expr_init(&key, VKNUM, 0);
       setintV(&key.u.nval, (int)narr);
@@ -1751,6 +1754,9 @@ static void expr_table(LexState *ls, ExpDesc *e) {
     fs->freereg = freg;
     if (!lex_opt(ls, ',') && !lex_opt(ls, ';'))
       break;
+  }
+  if(ls->tok == '=') {
+    lj_lex_error(ls, ls->tok, LJ_ERR_XMISSING, ". before key name");
   }
   lex_match(ls, '}', '{', line);
   if (vcall) {
@@ -1948,14 +1954,15 @@ static void expr_primary(LexState *ls, ExpDesc *v) {
       expr_toanyreg(fs, v);
       lj_lex_next(ls);
       expr_str(ls, &key);
-      if(ls->tok == '(') {
-        //Method call
-        ExpDesc* e = v;
+      if (ls->tok == '(') {
+        // Method call
+        ExpDesc *e = v;
         BCReg idx, func, fr2, obj = expr_toanyreg(fs, e);
         expr_free(fs, e);
         func = fs->freereg;
         fr2 = fs->ls->fr2;
-        bcemit_AD(fs, BC_MOV, func + 1 + fr2, obj); /* Copy object to 1st argument. */
+        bcemit_AD(fs, BC_MOV, func + 1 + fr2,
+                  obj); /* Copy object to 1st argument. */
         lj_assertFS(expr_isstrk(key), "bad usage");
         idx = const_str(fs, &key);
         if (idx <= BCMAX_C) {
@@ -2608,9 +2615,10 @@ static void parse_if(LexState *ls, BCLine line) {
   BCPos escapelist = NO_JMP;
   flist = parse_then(ls);
   lex_match(ls, '}', TK_if, line); // Skip }
-  while (ls->tok == TK_else) { /* Parse multiple 'elseif' blocks and one optional else block. */
-    lj_lex_next(ls); /* Skip 'else'. */
-    if(ls->tok == TK_if) {
+  while (ls->tok == TK_else) {     /* Parse multiple 'elseif' blocks and one
+                                      optional else block. */
+    lj_lex_next(ls);               /* Skip 'else'. */
+    if (ls->tok == TK_if) {
       jmp_append(fs, &escapelist, bcemit_jmp(fs));
       jmp_tohere(fs, flist);
       flist = parse_then(ls);
