@@ -2443,8 +2443,10 @@ static void parse_repeat(LexState *ls, BCLine line) {
   fscope_begin(fs, &bl1, FSCOPE_LOOP); /* Breakable loop scope. */
   fscope_begin(fs, &bl2, 0);           /* Inner scope. */
   lj_lex_next(ls);                     /* Skip 'repeat'. */
+  lex_check(ls, '{');
   bcemit_AD(fs, BC_LOOP, fs->nactvar, 0);
   parse_chunk(ls);
+  lex_match(ls, '}', TK_repeat, line);
   lex_match(ls, TK_until, TK_repeat, line);
   condexit = expr_cond(ls); /* Parse condition (still inside inner scope). */
   if (!(bl2.flags & FSCOPE_UPVAL)) { /* No upvalues? Just end inner scope. */
