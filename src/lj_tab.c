@@ -647,7 +647,7 @@ LJ_NOINLINE static MSize tab_len_slow(GCtab *t, size_t hi)
     cTValue *tvb = lj_tab_getint(t, (int32_t)mid);
     if (tvb && !tvisnil(tvb)) lo = mid; else hi = mid;
   }
-  return (MSize)lo;
+  return (MSize)lo+1;
 }
 
 /* Compute table length. Fast path. */
@@ -663,10 +663,16 @@ MSize LJ_FASTCALL lj_tab_len(GCtab *t)
       size_t mid = (lo+hi) >> 1;
       if (tvisnil(arrayslot(t, mid))) hi = mid; else lo = mid;
     }
-    return (MSize)lo;
+    return (MSize)lo+1;
   }
   /* Without a hash part, there's an implicit nil after the last element. */
-  return t->hmask ? tab_len_slow(t, hi) : (MSize)hi;
+  if(t->hmask) {
+    return tab_len_slow(t, hi);
+  } else if (t->asize == 0) {
+    return 0;
+  } else {
+    return (MSize)hi+1;
+  }
 }
 
 #if LJ_HASJIT
