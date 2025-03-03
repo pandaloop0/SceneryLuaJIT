@@ -2544,7 +2544,7 @@ static int predict_next(LexState *ls, FuncState *fs, BCPos pc) {
 }
 
 /* Parse 'for' iterator. */
-static void parse_for_iter(LexState *ls, GCstr *indexname) {
+static void parse_for_iter(LexState *ls) {
   FuncState *fs = ls->fs;
   ExpDesc e;
   BCReg nvars = 0;
@@ -2553,23 +2553,28 @@ static void parse_for_iter(LexState *ls, GCstr *indexname) {
   BCPos loop, loopend, exprpc = fs->pc;
   FuncScope bl;
   int isnext;
+  GCstr *indexname;
   /* Hidden control variables. */
   var_new_fixed(ls, nvars++, VARNAME_FOR_GEN);
   var_new_fixed(ls, nvars++, VARNAME_FOR_STATE);
   var_new_fixed(ls, nvars++, VARNAME_FOR_CTL);
+
+  line = ls->linenumber;
+  assign_adjust(ls, 3, expr_list(ls, &e), &e);
+
+  lex_check(ls, TK_arrow);
+  
   /* Visible variables returned from iterator. */
+  indexname = lex_str(ls);
   var_new(ls, nvars++, indexname);
   while (lex_opt(ls, ','))
     var_new(ls, nvars++, lex_str(ls));
-  // TODO
-  // lex_check(ls, TK_in);
-  line = ls->linenumber;
-  assign_adjust(ls, 3, expr_list(ls, &e), &e);
+
   /* The iterator needs another 3 [4] slots (func [pc] | state ctl). */
   bcreg_bump(fs, 3 + ls->fr2);
   isnext = (nvars <= 5 && fs->pc > exprpc && predict_next(ls, fs, exprpc));
   var_add(ls, 3); /* Hidden control variables. */
-  lex_check(ls, TK_do);
+  lex_check(ls, '{');
   loop = bcemit_AJ(fs, isnext ? BC_ISNEXT : BC_JMP, base, NO_JMP);
   fscope_begin(fs, &bl, 0); /* Scope for visible variables. */
   var_add(ls, nvars - 3);
@@ -2588,7 +2593,6 @@ static void parse_for_iter(LexState *ls, GCstr *indexname) {
 /* Parse 'for' statement. */
 static void parse_for(LexState *ls, BCLine line) {
   FuncState *fs = ls->fs;
-  GCstr *varname;
   FuncScope bl;
   fscope_begin(fs, &bl, FSCOPE_LOOP);
   lj_lex_next(ls);       /* Skip 'for'. */
@@ -2596,9 +2600,7 @@ static void parse_for(LexState *ls, BCLine line) {
     lj_lex_next(ls); // Skip <
     parse_for_num(ls, line);
   } else {
-    // TODO don't
-    varname = lex_str(ls); /* Get first variable name. */
-    parse_for_iter(ls, varname);
+    parse_for_iter(ls);
   }
   lex_match(ls, '}', TK_for, line);
   fscope_end(fs); /* Resolve break list. */

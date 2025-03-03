@@ -15,9 +15,9 @@
 #define TKDEF(_, __) \
   __(and, &&) _(break) _(do) _(else) _(end) _(false) \
   __(arrow, =>) \
-  _(for) _(fn) _(goto) _(if) __(local, let) __(nil, NONE) _(not) __(or, ||) \
+  _(for) _(fn) _(goto) _(if) __(local, let) __(nil, NONE) __(not, !) __(or, ||) \
   _(repeat) __(return, retfn) _(true) _(until) _(while) \
-  __(concat, ..) __(dots, ...) __(eq, ==) __(ge, >=) __(le, <=) __(ne, ~=) \
+  __(concat, ..) __(dots, ...) __(eq, ==) __(ge, >=) __(le, <=) __(ne, !=) \
   __(label, ::) __(number, <number>) __(name, <name>) __(string, <string>) \
   __(eof, <eof>)
 

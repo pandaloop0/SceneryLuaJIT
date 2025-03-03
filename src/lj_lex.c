@@ -346,11 +346,13 @@ static LexToken lex_scan(LexState *ls, TValue *tv) {
       lex_next(ls);
       continue;
     case '-':
-      lex_next(ls);
-      if (ls->c != '-')
         return '-';
+    case '/':
       lex_next(ls);
-      if (ls->c == '[') { /* Long comment "--[=*[...]=*]". */
+      if (ls->c != '/')
+        return '/';
+      lex_next(ls);
+      if (ls->c == '[') { /* Long comment "//[=*[...]=*]". */
         int sep = lex_skipeq(ls);
         lj_buf_reset(&ls->sb); /* `lex_skipeq' may dirty the buffer */
         if (sep >= 0) {
@@ -359,7 +361,7 @@ static LexToken lex_scan(LexState *ls, TValue *tv) {
           continue;
         }
       }
-      /* Short comment "--.*\n". */
+      /* Short comment "//.*\n". */
       while (!lex_iseol(ls) && ls->c != LEX_EOF)
         lex_next(ls);
       continue;

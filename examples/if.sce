@@ -6,3 +6,8 @@ if x > 22 {
 } else {
 	print("Sorallo OH YEA")
 }
+
+if x != 99 {
+	print("Huzza")
+}
+
