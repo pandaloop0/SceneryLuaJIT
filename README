@@ -1,6 +1,13 @@
 README for LuaJIT 2.1
 ---------------------
 
+This is a fork of the luajit made by Pandaloop.
+The main differences are in syntax.
+The only semantic difference is arrays starting at 0 which sadly breaks the
+ipairs function. Fixing ipairs is sadly not that easy.
+
+See the [./examples] directory for examples of the new syntax.
+
 LuaJIT is a Just-In-Time (JIT) compiler for the Lua programming language.
 
 Project Homepage: https://luajit.org/
