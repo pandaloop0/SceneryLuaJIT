@@ -2470,29 +2470,33 @@ static void parse_repeat(LexState *ls, BCLine line) {
 }
 
 /* Parse numeric 'for'. */
-static void parse_for_num(LexState *ls, GCstr *varname, BCLine line) {
+static void parse_for_num(LexState *ls, BCLine line) {
   FuncState *fs = ls->fs;
   BCReg base = fs->freereg;
   FuncScope bl;
   BCPos loop, loopend;
+  GCstr *varname;
+
   /* Hidden control variables. */
   var_new_fixed(ls, FORL_IDX, VARNAME_FOR_IDX);
   var_new_fixed(ls, FORL_STOP, VARNAME_FOR_STOP);
   var_new_fixed(ls, FORL_STEP, VARNAME_FOR_STEP);
-  /* Visible copy of index variable. */
-  var_new(ls, FORL_EXT, varname);
-  lex_check(ls, '=');
   expr_next(ls);
   lex_check(ls, ',');
   expr_next(ls);
-  if (lex_opt(ls, ',')) {
+  if (lex_opt(ls, ';')) {
     expr_next(ls);
   } else {
     bcemit_AD(fs, BC_KSHORT, fs->freereg, 1); /* Default step is 1. */
     bcreg_reserve(fs, 1);
   }
+  /* Visible copy of index variable. */
+  lex_check(ls, TK_arrow);
+  varname = lex_str(ls);
+  var_new(ls, FORL_EXT, varname);
   var_add(ls, 3); /* Hidden control variables. */
-  lex_check(ls, TK_do);
+  lex_check(ls, '>');
+  lex_check(ls, '{');
   loop = bcemit_AJ(fs, BC_FORI, base, NO_JMP);
   fscope_begin(fs, &bl, 0); /* Scope for visible variables. */
   var_add(ls, 1);
@@ -2557,7 +2561,8 @@ static void parse_for_iter(LexState *ls, GCstr *indexname) {
   var_new(ls, nvars++, indexname);
   while (lex_opt(ls, ','))
     var_new(ls, nvars++, lex_str(ls));
-  lex_check(ls, TK_in);
+  // TODO
+  // lex_check(ls, TK_in);
   line = ls->linenumber;
   assign_adjust(ls, 3, expr_list(ls, &e), &e);
   /* The iterator needs another 3 [4] slots (func [pc] | state ctl). */
@@ -2587,14 +2592,15 @@ static void parse_for(LexState *ls, BCLine line) {
   FuncScope bl;
   fscope_begin(fs, &bl, FSCOPE_LOOP);
   lj_lex_next(ls);       /* Skip 'for'. */
-  varname = lex_str(ls); /* Get first variable name. */
-  if (ls->tok == '=')
-    parse_for_num(ls, varname, line);
-  else if (ls->tok == ',' || ls->tok == TK_in)
+  if (ls->tok == '<') {
+    lj_lex_next(ls); // Skip <
+    parse_for_num(ls, line);
+  } else {
+    // TODO don't
+    varname = lex_str(ls); /* Get first variable name. */
     parse_for_iter(ls, varname);
-  else
-    err_syntax(ls, LJ_ERR_XFOR);
-  lex_match(ls, TK_end, TK_for, line);
+  }
+  lex_match(ls, '}', TK_for, line);
   fscope_end(fs); /* Resolve break list. */
 }
 

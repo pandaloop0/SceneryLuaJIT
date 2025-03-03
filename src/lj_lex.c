@@ -377,9 +377,12 @@ static LexToken lex_scan(LexState *ls, TValue *tv) {
     }
     case '=':
       lex_next(ls);
-      if (ls->c != '=')
+      if (ls->c == '>') {
+        lex_next(ls);
+        return TK_arrow;
+      } else if (ls->c != '=') {
         return '=';
-      else {
+      } else {
         lex_next(ls);
         return TK_eq;
       }
