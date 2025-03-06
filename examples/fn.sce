@@ -4,6 +4,9 @@ fn morello() {
 	}
 	print("Forello")
 	print(x.a)
+	if x.a {
+		print("lello")
+	}
 }
 
 morello()

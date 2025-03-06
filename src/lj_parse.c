@@ -1907,8 +1907,6 @@ static void parse_args(LexState *ls, ExpDesc *e) {
         setbc_b(bcptr(fs, &args), 0); /* Pass on multiple results. */
     }
     lex_match(ls, ')', '(', line);
-  } else if (ls->tok == '{') {
-    expr_table(ls, &args);
   } else if (ls->tok == TK_string) {
     expr_init(&args, VKSTR, 0);
     args.u.sval = strV(&ls->tokval);
@@ -1987,7 +1985,7 @@ static void expr_primary(LexState *ls, ExpDesc *v) {
       expr_index(fs, v, &key);
     } else if (ls->tok == ':') {
       expr_field(ls, v);
-    } else if (ls->tok == '(' || ls->tok == TK_string || ls->tok == '{') {
+    } else if (ls->tok == '(' || ls->tok == TK_string) {
       expr_tonextreg(fs, v);
       if (ls->fr2)
         bcreg_reserve(fs, 1);
