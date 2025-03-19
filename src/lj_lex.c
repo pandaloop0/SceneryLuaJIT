@@ -345,8 +345,6 @@ static LexToken lex_scan(LexState *ls, TValue *tv) {
     case '\f':
       lex_next(ls);
       continue;
-    case '-':
-        return '-';
     case '/':
       lex_next(ls);
       if (ls->c != '/')
