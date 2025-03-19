@@ -1,12 +1,21 @@
 README for LuaJIT 2.1
 ---------------------
 
+## Pandaloop Note
 This is a fork of the luajit made by Pandaloop.
+This fork is SPECIFICALLY meant for the Pandaloop scenery web framework.
+If you want to use this fork in another project be warned that some assumptions the jit compiler
+does may be broken and have to be fixed.
+
 The main differences are in syntax.
-The only semantic difference is arrays starting at 0 which sadly breaks the
-ipairs function. Fixing ipairs is sadly not that easy.
+
+The only semantic difference is arrays starting at 0.
+Because of that some standard functions may be broken but will be fixed ASAP if a problem occurs.
 
 See the [./examples] directory for examples of the new syntax.
+
+This fork is not recommended for use outside of the Pandaloop scenery web framework.
+## Continuation of old Readme
 
 LuaJIT is a Just-In-Time (JIT) compiler for the Lua programming language.
 
